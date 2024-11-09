@@ -1,0 +1,1 @@
+"0","interaction.plot(DATA$riego, DATA$geno, DATA$hi, type=""b"", legend=TRUE, ylab=""hi"")"

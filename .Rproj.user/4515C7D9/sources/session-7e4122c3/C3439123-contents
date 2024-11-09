@@ -1,0 +1,271 @@
+---
+title: "MI PAGINA WEB"
+author: "Mariela"
+format: html
+editor: visual
+toc: true
+toc-location: left
+number-sections: true
+embed-resources: true
+output-file: index
+---
+
+# PROGRAMACIÓN Y ANÁLISIS DE DATOS
+
+## MODELOS LINEALES
+
+### Importar data
+
+```{r}
+source('https://inkaverse.com/setup.r')
+
+library(readxl)
+DATA <- read_excel("LA MOLINA 2014 POTATO WUE (FB).xlsx", 
+                                            sheet = "fb")
+```
+
+Para saber que datos con caracteres y cuales son numeros:
+
+```{r}
+str(DATA)
+```
+
+### Modelo lineal Leaf Area (cm2) 
+
+#### ANOVA
+
+```{r}
+modelo <- aov(formula = lfa ~ bloque + riego + geno + riego*geno, data= DATA)
+
+anova(modelo)
+plot(modelo)
+```
+
+Este ANOVA examina el efecto de los factores "riego" y "genotipo" (geno), así como su interacción (riego:geno), sobre la variable respuesta "lfa". Los resultados muestran que tanto el efecto del riego, el efecto del genotipo y su interacción son altamente significativos (p \< 0.001). Esto indica que tanto el tipo de riego como el genotipo, así como la combinación de ambos, tienen un impacto importante en la variable respuesta "lfa". Por otro lado, el bloque no muestra un efecto significativo (p = 0.1892), lo que sugiere que no influye de manera considerable en los resultados.
+
+#### Boxplot 
+
+```{r}
+ggplot(DATA, aes(x = geno, y = lfa, colour = riego)) +
+  geom_boxplot(outlier.colour = "turquoise", outlier.shape = 16, outlier.size = 3) +
+  labs(title = "Boxplot por Nivel de Riego y Genotipo", x = "Combinación Riego-Genotipo", y = "Leaf Area (cm^2)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Este boxplot muestra la distribución del área foliar (Leaf Area) en función de la combinación entre el nivel de riego (irrigado y sequía) y diferentes genotipos (G01 a G15). Se observa que, en general, el tratamiento de riego "irrigado" (en color rojo) presenta valores de área foliar significativamente mayores en comparación con el tratamiento de "sequía" (en color azul) para la mayoría de los genotipos. Esto sugiere que el riego tiene un impacto positivo en el crecimiento de las hojas. Además, hay una notable variabilidad entre los genotipos bajo ambas condiciones de riego, lo que indica que algunos genotipos responden mejor al riego que otros en términos de área foliar.
+
+### Modelo lineal Harvest Index 
+
+#### ANOVA
+
+```{r}
+modelo2 <- aov(formula = hi ~ bloque + riego + geno + riego*geno, data= DATA)
+
+anova(modelo2)
+plot(modelo2)
+```
+
+Este ANOVA analiza el impacto de los factores "riego" y "genotipo" (geno) y su interacción sobre la variable de respuesta "hi". Los resultados indican que los efectos del bloque, riego y genotipo son altamente significativos (p \< 0.001), lo que sugiere que estos factores tienen una influencia importante sobre "hi". La interacción entre riego y genotipo tiene una significancia marginal (p = 0.06019), lo que indica que la combinación de estos factores podría tener un impacto leve sobre "hi", aunque no tan fuerte como los efectos individuales de cada factor.
+
+#### Boxplot 
+
+```{r}
+ggplot(DATA, aes(x = geno, y = hi, colour = riego)) +
+  geom_boxplot(outlier.colour = "darkred", outlier.shape = 16, outlier.size = 3) +
+  labs(title = "Boxplot por Nivel de Riego y Genotipo", x = "Combinación Riego-Genotipo", y = "Harvest Index") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Este boxplot muestra la distribución del índice de cosecha (Harvest Index) para diferentes combinaciones de nivel de riego (irrigado y sequía) y genotipos (G01 a G15). Se observa una variación considerable en el índice de cosecha entre los genotipos, así como entre los tratamientos de riego. En general, el tratamiento de sequía (en color azul) tiende a mostrar una menor variabilidad y valores de índice de cosecha más bajos en comparación con el tratamiento irrigado (en color rojo), lo que sugiere que la falta de riego afecta negativamente el rendimiento de algunos genotipos. Sin embargo, algunos genotipos mantienen un índice de cosecha relativamente alto incluso en condiciones de sequía, lo cual podría indicar una resistencia mayor a la falta de agua.
+
+## COMPARACION DE MEDIAS
+
+```{r}
+library(agricolae)
+```
+
+### ANOVA
+
+```{r}
+anova_result <- aov(lfa ~ riego *geno, data = DATA)
+anova_result
+```
+
+Este ANOVA analiza el efecto del riego, del genotipo (geno) y de su interacción (riego:geno) sobre el área foliar (lfa). Los resultados muestran que:
+
+-   El efecto del **riego** tiene la suma de cuadrados más alta (788,556,926) con 1 grado de libertad, lo cual indica que es una fuente importante de variación en el área foliar.
+-   El **genotipo** también contribuye significativamente a la variación, con una suma de cuadrados de 261,729,564 y 14 grados de libertad.
+-   La **interacción entre riego y genotipo** tiene una suma de cuadrados de 108,147,972 con 14 grados de libertad, lo que sugiere que la respuesta en área foliar depende tanto del tipo de riego como del genotipo.
+
+El error estándar residual es 748.51, lo que da una idea de la variabilidad no explicada por los factores en el modelo. La advertencia de efectos desbalanceados sugiere que el diseño experimental puede no tener el mismo número de observaciones en todas las combinaciones de riego y genotipo.
+
+### Prueba de Tukey
+
+```{r}
+triego <- TukeyHSD(anova_result, "riego")
+triego
+```
+
+Este análisis de comparaciones múltiples de Tukey evalúa la diferencia en el área foliar (lfa) entre los niveles de riego (sequia vs. irrigado) con un nivel de confianza del 95%.
+
+-   La diferencia promedio en el área foliar entre los tratamientos de "sequía" e "irrigado" es de **-4585.65** (sequía tiene un valor promedio menor que el irrigado).
+-   El intervalo de confianza para esta diferencia es de **\[-4827.66, -4343.64\]**, lo cual indica que, con un 95% de confianza, la verdadera diferencia en el área foliar entre los tratamientos cae dentro de este rango.
+-   El valor ajustado de p (p adj) es **0**, lo que significa que la diferencia entre "sequía" e "irrigado" es estadísticamente significativa.
+
+### RESULTADOS
+
+```{r}
+print(triego)
+
+tunkey <- HSD.test(modelo, "riego", group=TRUE)
+print(triego)
+```
+
+Este resultado de comparaciones múltiples de Tukey analiza la diferencia en el área foliar (lfa) entre los tratamientos de riego (sequía e irrigado) con un nivel de confianza del 95%.
+
+-   La **diferencia promedio** en el área foliar entre "sequía" e "irrigado" es de **-4585.65**, lo cual indica que el área foliar es significativamente menor en el tratamiento de sequía en comparación con el de irrigado.
+-   El **intervalo de confianza del 95%** para esta diferencia es de **\[-4827.66, -4343.64\]**, lo que confirma que la diferencia en el área foliar entre estos tratamientos es consistentemente negativa y significativa.
+-   El **valor p ajustado** es **0**, lo que significa que esta diferencia es altamente significativa estadísticamente.
+
+```{r}
+tgeno<- HSD.test(modelo, "geno", group=TRUE)
+print(triego)
+tunkey_interaccion <- HSD.test(modelo, c("riego","geno"), group=TRUE) 
+```
+
+Este resultado de comparaciones múltiples de Tukey muestra la diferencia en el área foliar (lfa) entre los tratamientos de riego ("sequía" e "irrigado") con un nivel de confianza del 95%.
+
+-   La **diferencia promedio** en el área foliar entre los tratamientos es de **-4585.65**, indicando que el área foliar es significativamente menor bajo condiciones de sequía en comparación con el riego.
+-   El **intervalo de confianza del 95%** para esta diferencia es de **\[-4827.66, -4343.64\]**, lo que sugiere que, con un 95% de confianza, la diferencia real en el área foliar entre los tratamientos se encuentra en este rango y es negativa.
+-   El **valor p ajustado** es **0**, lo cual indica que esta diferencia es altamente significativa estadísticamente. Esto confirma que el riego tiene un impacto considerable en aumentar el área foliar en comparación con las condiciones de sequía.
+
+```{r}
+str(tgeno)
+```
+
+Este resultado muestra los análisis de un test de Tukey sobre 15 tratamientos. Los puntos clave son:
+
+1.  **Estadísticas generales**:
+
+    -   Error medio cuadrático: 549979
+    -   Media general: 4807
+    -   Coeficiente de variación: 15.4%
+
+2.  **Parámetros del test**:
+
+    -   Test: Tukey
+    -   Número de tratamientos: 15
+    -   Nivel de significancia: 0.05
+
+3.  **Medias**: Se presentan las medias de los tratamientos junto con medidas de dispersión (mínimo, máximo, cuartiles).
+
+4.  **Agrupación**: Los tratamientos se agrupan en letras (por ejemplo, "a", "ab", "abc") para indicar diferencias significativas.
+
+Este análisis muestra cómo los tratamientos se comparan entre sí, señalando cuáles son significativamente diferentes.
+
+```{r}
+mc <-tunkey_interaccion$groups %>%
+ rownames_to_column("trat") %>%
+ separate(trat, c("riego", "variedad"))
+str(mc)
+```
+
+Este resultado muestra un conjunto de datos con 30 observaciones y 4 variables:
+
+1.  **riego**: Tipo de riego utilizado, con valores como "irrigado".
+2.  **variedad**: Tipo de variedad, representado por códigos como "G09", "G04", "G05", "G13", etc.
+3.  **lfa**: Valores numéricos asociados a cada combinación de riego y variedad.
+4.  **groups**: Agrupación de los tratamientos según su comportamiento, usando letras (por ejemplo, "a", "ab", "abc") para indicar diferencias significativas.
+
+Este conjunto de datos se usa para analizar cómo las diferentes variedades y condiciones de riego afectan el valor de la variable **lfa**, agrupando los tratamientos de acuerdo a su significancia.
+
+```{r}
+plot(tunkey_interaccion)
+```
+
+```{r}
+grupos <- tunkey_interaccion$groups %>%
+  rownames_to_column("tratamientos") %>%
+  separate(tratamientos, into = c("geno", "riego", sep = ":"))
+grupos
+str(grupos)
+```
+
+## GRAFICO DE BARRAS
+
+```{r}
+ggplot(DATA, aes(x = geno, y = lfa, fill = riego)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Geno", y = "LFA", fill = "Riego") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## MODELO LINEAL MIXTO Leaf Area (cm2) 
+
+### ANOVA
+
+```{r}
+library(lme4)
+
+model <- lme4::lmer(lfa ~ riego + geno + riego*geno + (1|bloque), data = DATA)
+
+anova(model)
+```
+
+Los resultados sugieren que tanto el **riego** como el **geno** y su **interacción** tienen efectos significativos sobre la variable dependiente, pero el riego tiene el mayor impacto, seguido por el geno y, por último, la interacción entre ambos.
+
+### Boxplot
+
+```{r}
+library(lmerTest)
+boxplot(lfa~bloque+riego+geno+riego*geno, DATA)
+```
+
+```{r}
+library(inti)
+
+ol <- boxplot(lfa~riego*geno, DATA)
+ol
+
+modelo4 <- remove_outliers(data = DATA, formula = lfa ~ riego + geno + riego*geno + (1|bloque))
+modelo4
+```
+
+## ANÁLISIS MULTIVARIADO DE DATOS
+
+```{r}
+modelo_manova <- manova(cbind(lfa, hi) ~ riego * geno, data = DATA)
+summary(modelo_manova)
+```
+
+El análisis de MANOVA muestra que los factores **riego** y **geno**, así como su interacción (**riego:geno**), tienen efectos altamente significativos sobre las variables dependientes. El valor de Pillai para **riego** (0.92173) indica un impacto fuerte, con un valor de p muy bajo (\< 0.00000000000000022), lo que señala una diferencia significativa entre los niveles de riego. El factor **geno** también muestra un efecto significativo (Pillai = 1.54887, p \< 0.00000000000000022). La interacción entre **riego** y **geno** es igualmente significativa (Pillai = 0.74008, p = 0.0000000000008777). Todos los efectos son altamente significativos con valores de p extremadamente bajos.
+
+```{r}
+summary.aov(modelo_manova)
+```
+
+Ambos factores afectan significativamente a **lfa** y **hi** , pero la interacción entre **riego** y **geno** solo tiene un efecto significativo sobre **lfa** .
+
+```{r}
+interaction.plot(DATA$riego, DATA$geno, DATA$lfa, type="b", legend=TRUE, ylab="lfa")
+
+```
+
+```{r}
+interaction.plot(DATA$riego, DATA$geno, DATA$hi, type="b", legend=TRUE, ylab="hi")
+```
+
+```{r}
+ggplot(DATA, aes(x = riego, y = lfa, color = geno)) +
+  geom_boxplot() +
+  labs(title = "Interacción entre riego y geno sobre lfa")
+```
+
+```{r}
+ggplot(DATA, aes(x = riego, y = hi, color = geno)) +
+  geom_boxplot() +
+  labs(title = "Interacción entre riego y geno sobre hi")
+```

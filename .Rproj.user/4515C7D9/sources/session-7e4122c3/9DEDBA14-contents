@@ -1,0 +1,236 @@
+---
+title: "Mi página web Cía"
+author: "Goicochea"
+format: html
+editor: visual
+toc: true
+toc-location: left
+number-sections: true
+embed-resources: true
+output-file: index
+---
+
+# Mi primera página web, pasos:
+
+Tener mi proyecto.
+
+Conectar mi proyecto a GitHub.
+
+Tener un archivo en formato html llamado `index.html` .
+
+Hacer push al repositorio.
+
+Activar GitHub pages.
+
+## Codigo para el paso N°4:
+
+En terminal
+
+git add .
+
+git commit -m "mi pagina web"
+
+git push
+
+# ¿Cómo usar Quarto?
+
+## Fuentes
+
+Negrita: **Esto es una fuente en negrita.**
+
+Cursiva: *Esto es una fuente en cursiva.*
+
+***Solanum tuberosum***
+
+## Formulas matemáticas
+
+A continuación se presenta la formula es el area de una circunferencia:
+
+$Area_c\ =\ pi\ . r^2$
+
+Formula cualquiera a continuación:
+
+$$
+\frac{\left(2x\ -\ 1\right)^2\ 1}{4}\ = k
+$$
+
+# Modelos lineales mixtos
+
+## Importar datos
+
+```{r}
+source('https://inkaverse.com/setup.r')
+
+URL <- "https://docs.google.com/spreadsheets/d/15r7ZwcZZHbEgltlF6gSFvCTFA-CFzVBWwg3mFlRyKPs/edit?gid=172957346#gid=172957346"
+
+library(readxl)
+DATA <- read_excel("LA MOLINA 2014 POTATO WUE (FB).xlsx", 
+                                            sheet = "fb")
+
+library(googlesheets4)
+GS <- as_sheets_id(URL)
+GS
+
+str(DATA)
+
+```
+
+## Modelo lineal Var. lfa
+
+```{r}
+modelo <- aov(formula = lfa ~ bloque + riego + geno + riego*geno, data= DATA)
+
+anova(modelo)
+plot(modelo)
+
+```
+
+### Boxplot
+
+```{r}
+ggplot(DATA, aes(x = geno, y = lfa, colour = riego)) +
+  geom_boxplot(outlier.colour = "red", outlier.shape = 16, outlier.size = 3) +
+  labs(title = "Boxplot por Nivel de Riego y Genotipo", x = "Combinación Riego-Genotipo", y = "Area foliar (cm^2)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+## Modelo lineal Var. hi
+
+```{r}
+modelo2 <- aov(formula = hi ~ bloque + riego + geno + riego*geno, data= DATA)
+
+anova(modelo2)
+plot(modelo2)
+```
+
+### Boxplot
+
+```{r}
+ggplot(DATA, aes(x = geno, y = hi, colour = riego)) +
+  geom_boxplot(outlier.colour = "red", outlier.shape = 16, outlier.size = 3) +
+  labs(title = "Boxplot por Nivel de Riego y Genotipo", x = "Combinación Riego-Genotipo", y = "Area foliar (cm^2)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## Modelo lineal Var. twue
+
+```{r}
+modelo3 <- aov(formula = twue ~ bloque + riego + geno + riego*geno, data= DATA)  
+anova(modelo3) 
+plot(modelo3)
+```
+
+### Boxplot
+
+```{r}
+ggplot(DATA, aes(x = geno, y = twue, colour = riego)) +
+  geom_boxplot(outlier.colour = "red", outlier.shape = 16, outlier.size = 3) +
+  labs(title = "Boxplot por Nivel de Riego y Genotipo", x = "Combinación Riego-Genotipo", y = "Area foliar (cm^2)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## Modelo lineal mixto Var. lfa
+
+```{r}
+library(lme4)
+
+model <- lme4::lmer(lfa ~ riego + geno + riego*geno + (1|bloque), data = DATA)
+
+anova(model)
+```
+
+Como saber si un modelo lineal mixto tiene significancia.
+
+```{r}
+library(lmerTest)
+
+```
+
+```{r}
+boxplot(lfa~bloque+riego+geno+riego*geno, DATA)
+```
+
+```{r}
+library(inti)
+
+ol <- boxplot(lfa~riego*geno, DATA)
+ol
+
+modelo4 <- remove_outliers(data = DATA, formula = lfa ~ riego + geno + riego*geno + (1|bloque))
+modelo4
+```
+
+# Comparación de medias
+
+```{r}
+library(agricolae)
+
+```
+
+Realizar el análisis de varianza
+
+```{r}
+anova_result <- aov(lfa ~ riego *geno, data = DATA)
+anova_result
+```
+
+Aplicar la prueba de Tukey
+
+```{r}
+tukey_riego <- TukeyHSD(anova_result, "riego")
+tukey_riego
+```
+
+Ver los resultados
+
+```{r}
+print(tukey_riego)
+
+tunkey <- HSD.test(modelo, "riego", group=TRUE)
+print(tukey_riego)
+                               
+tukey_geno<- HSD.test(modelo, "geno", group=TRUE)
+print(tukey_riego)
+tunkey_interaccion <- HSD.test(modelo, c("riego","geno"), group=TRUE) 
+
+str(tukey_geno)
+
+mc <-tunkey_interaccion$groups %>%
+ rownames_to_column("trat") %>%
+ separate(trat, c("riego", "variedad"))
+
+str(mc)
+```
+
+```{r}
+plot(tunkey_interaccion)
+```
+
+```{r}
+grupos <- tunkey_interaccion$groups %>%
+  rownames_to_column("tratamientos") %>%
+  separate(tratamientos, into = c("geno", "riego", sep = ":"))
+grupos
+str(grupos)
+
+```
+
+## Grafica de barras
+
+```{r}
+ggplot(DATA, aes(x = geno, y = lfa, fill = riego)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Geno", y = "LFA", fill = "Riego") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Analisis multivariado de datos
+
+```{r}
+
+```
